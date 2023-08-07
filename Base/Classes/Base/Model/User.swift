@@ -8,6 +8,7 @@
 import Foundation
 import ThingSmartBaseKit
 import ThingSmartDeviceKit
+import HejhomeSDKCommon
 
 class User: NSObject {
     

@@ -7,6 +7,7 @@
 
 import Foundation
 import ThingSmartBaseKit
+import HejhomeSDKCommon
 
 public enum HejhomeCameraType {
     case camera
