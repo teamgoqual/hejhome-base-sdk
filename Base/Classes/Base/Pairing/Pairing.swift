@@ -13,8 +13,6 @@ class Pairing: NSObject {
     
     static let shared = Pairing()
     
-    var isDebug = true
-    
     var pidList: [String] = []
     
     var ssidName = ""
@@ -37,7 +35,7 @@ class Pairing: NSObject {
 // Initialize
 extension Pairing {
     func initialize(isDebug: Bool = false, onSuccess: (()->())? = nil, onFailure: ((PairingErrorCode)->())? = nil) {
-        self.isDebug = isDebug
+        HejhomeBase.shared.isDebug = isDebug
         
         model.getProductIdList { arr in
             print("HejHomeSDK::: initializeData Succuess")

@@ -57,8 +57,8 @@ extension UserCheckModel {
     }
     
     func getUserCheckData(uid: String, complete: @escaping (UserTokenInfo) -> Void, fail: @escaping (HejhomeLoginErrorCode) -> Void){
-        print("HejHomeSDK::: getUserToken \(GoqualConstants.PLATFORM_URL(Pairing.shared.isDebug))\(GoqualConstants.API_THINQ_USER_CHECK)")
-        API.shared.get(urlString: "\(GoqualConstants.PLATFORM_URL(Pairing.shared.isDebug))\(GoqualConstants.API_THINQ_USER_CHECK)", uid: uid) { (response) in
+        print("HejHomeSDK::: getUserToken \(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER_CHECK)")
+        API.shared.get(urlString: "\(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER_CHECK)", uid: uid) { (response) in
             do {
                 var tokenInfo = try UserTokenInfo.init(jsonDictionary: response)
                 if !tokenInfo.userToken.isEmpty {

@@ -27,10 +27,14 @@ public class HejhomeBase: NSObject {
     @objc public static let shared = HejhomeBase()
     
     public weak var delegate: HejhomeBaseDelegate?
-    
+    var isDebug = true
     
     @objc public func setKey(appKey: String, secretKey: String) {
         User.shared.start(key: appKey, secret: secretKey)
+    }
+    
+    @objc public func setDebug(_ status: Bool) {
+        isDebug = status
     }
     
     public func setLgAccessCode(_ code: String, onSDKLoginSuccess: @escaping () -> Void, onSDKSetupCancelled: @escaping (HejhomeLoginErrorCode?) -> Void, needLogin: @escaping (String) -> Void) {

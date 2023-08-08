@@ -79,7 +79,7 @@ extension PairingDeviceModel {
     
     func getProductIdList(complete: @escaping ([String]) -> Void, fail: @escaping (String) -> Void){
         print("HejHomeSDK::: getProductIdList")
-        API.shared.get(urlString: "\(GoqualConstants.PLATFORM_URL(Pairing.shared.isDebug))\(GoqualConstants.GET_PRODUCT_ID_LIST)") { (response) in
+        API.shared.get(urlString: "\(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.GET_PRODUCT_ID_LIST)") { (response) in
             do {
                 self.productIdListModel = try ProductIdList.init(jsonDictionary: response)
                 print(response)
@@ -123,7 +123,7 @@ extension PairingDeviceModel {
                 }
             }
             
-            API.shared.get(urlString: "\(GoqualConstants.PLATFORM_URL(Pairing.shared.isDebug))\(GoqualConstants.PAIRING_STATUS(token))?pairingStartTime=\(String(timeInSeconds))") { (response) in
+            API.shared.get(urlString: "\(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.PAIRING_STATUS(token))?pairingStartTime=\(String(timeInSeconds))") { (response) in
                 print("HejHomeSDK::: searchPairingDevice \(self.timeLeft.description)")
                 do {
                     self.pairingDeviceResult = try PairingDeviceResult.init(jsonDictionary: response)

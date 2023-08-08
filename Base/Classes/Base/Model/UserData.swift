@@ -24,8 +24,8 @@ class UserData: NSObject {
 extension UserData {
         
     static func getUserId(lgAccessCode: String, complete: @escaping (UserInfo) -> Void, fail: @escaping (String) -> Void){
-        print("HejHomeSDK::: getUser \(GoqualConstants.PLATFORM_URL(Pairing.shared.isDebug))\(GoqualConstants.API_THINQ_USER)")
-        API.shared.get(urlString: "\(GoqualConstants.PLATFORM_URL(Pairing.shared.isDebug))\(GoqualConstants.API_THINQ_USER)", lgAccessCode: lgAccessCode) { (response) in
+        print("HejHomeSDK::: getUser \(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER)")
+        API.shared.get(urlString: "\(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER)", lgAccessCode: lgAccessCode) { (response) in
             do {
                 var userInfo = try UserInfo.init(jsonDictionary: response)
                 if !userInfo.uid.isEmpty {
@@ -43,11 +43,11 @@ extension UserData {
     }
     
     static func updateUserData(lgAccessCode: String, uid: String, userName: String?, sessionInfo: String, complete: @escaping () -> Void, fail: @escaping (String) -> Void){
-        print("HejHomeSDK::: updateUserData \(GoqualConstants.PLATFORM_URL(Pairing.shared.isDebug))\(GoqualConstants.API_THINQ_USER)")
+        print("HejHomeSDK::: updateUserData \(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER)")
         
         let param = UserInfo(uid: uid, userName: userName, eventToken: lgAccessCode, sessionInfo: sessionInfo)
         
-        API.shared.post(urlString: "\(GoqualConstants.PLATFORM_URL(Pairing.shared.isDebug))\(GoqualConstants.API_THINQ_USER)", parameter: param, lgAccessCode: lgAccessCode) { (response) in
+        API.shared.post(urlString: "\(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER)", parameter: param, lgAccessCode: lgAccessCode) { (response) in
             do {
                 if let errorCode = response["errorCode"] as? Int {
                     print("HejHomeSDK::: fail code - \(errorCode)")
@@ -65,9 +65,9 @@ extension UserData {
     }
     
     static func deleteUserData(uid: String, complete: @escaping () -> Void, fail: @escaping (String) -> Void){
-        print("HejHomeSDK::: deleteUser \(GoqualConstants.PLATFORM_URL(Pairing.shared.isDebug))\(GoqualConstants.API_THINQ_USER)")
+        print("HejHomeSDK::: deleteUser \(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER)")
         
-        API.shared.delete(urlString: "\(GoqualConstants.PLATFORM_URL(Pairing.shared.isDebug))\(GoqualConstants.API_THINQ_USER)", path: uid) { (response) in
+        API.shared.delete(urlString: "\(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER)", path: uid) { (response) in
             do {
                 if let errorCode = response["errorCode"] as? Int {
                     print("HejHomeSDK::: fail code - \(errorCode)")
