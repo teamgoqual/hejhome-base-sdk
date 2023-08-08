@@ -7,6 +7,7 @@
 
 import Foundation
 import ThingSmartActivatorKit
+import HejhomeSDKCommon
 
 class Pairing: NSObject {
     
@@ -57,7 +58,7 @@ extension Pairing {
     }
     
     func getPairingToken(onSuccess: @escaping ((String)->()), onFailure: @escaping  ((PairingErrorCode)->())) {
-        guard let homeId = Home.current?.homeId else { return }
+        guard let homeId = HejhomeHome.current?.homeId else { return }
         
         ThingSmartActivator.sharedInstance().getTokenWithHomeId(homeId) { result in
             guard let result = result, !result.isEmpty else { onFailure(.AUTO_PAIRING_TOKEN_EMPTY); return }
@@ -100,7 +101,7 @@ extension Pairing {
     
     func generateQRCode(ssid: String, password: String, size: Int, timeout: TimeInterval = 100, completionHandler: @escaping (UIImage?) -> Void, failureHandler: @escaping (Error?) -> Void) {
         
-        guard let homeId = Home.current?.homeId else { failureHandler(nil); return }
+        guard let homeId = HejhomeHome.current?.homeId else { failureHandler(nil); return }
         
         ThingSmartActivator.sharedInstance().getTokenWithHomeId(homeId) { result in
             let token = result ?? ""

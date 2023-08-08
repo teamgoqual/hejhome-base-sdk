@@ -295,7 +295,7 @@ extension User {
     func selectDevice(deviceId: String, onSuccess: @escaping () -> Void) {
         
         // 로컬에 저장된 디바이스 전체 리스트를 불러온다 (리스트를 통해 홈, 디바이스 탐색)
-        if allDeviceList.isEmpty, let all = Device.all {
+        if allDeviceList.isEmpty, let all = HejhomeDevice.all {
             allDeviceList = all
         }
         
@@ -317,34 +317,34 @@ extension User {
     }
     
     func selectHome(homeId: Int64, callback: @escaping () -> Void) {
-        if Home.current != nil, Home.homeId == homeId {
+        if HejhomeHome.current != nil, HejhomeHome.homeId == homeId {
             callback()
             return
         }
         
         getHomeList {
-            Home.homeId = homeId
+            HejhomeHome.homeId = homeId
             callback()
         }
         
     }
     
     func findDevice(deviceId: String, onSuccess: @escaping () -> Void) {
-        if Device.current != nil, Device.deviceId == deviceId {
+        if HejhomeDevice.current != nil, HejhomeDevice.deviceId == deviceId {
             onSuccess()
             return
         }
         
         getDeviceListByHome { model in
-            Device.deviceId = deviceId
+            HejhomeDevice.deviceId = deviceId
             onSuccess()
         }
     }
     
     func getDeviceListByHome(_ callback: @escaping ((ThingSmartHomeModel?) -> Void)) {
         
-        if Home.current != nil {
-            home = ThingSmartHome(homeId: Home.current!.homeId)
+        if HejhomeHome.current != nil {
+            home = ThingSmartHome(homeId: HejhomeHome.current!.homeId)
             home?.delegate = self
             
             home?.getDataWithSuccess({ model in
@@ -390,8 +390,8 @@ extension User {
     
     func checkNextIndex() {
         if listIndex == homeList.count {
-            Device.all = self.allDeviceList
-            Home.current = homeList.first
+            HejhomeDevice.all = self.allDeviceList
+            HejhomeHome.current = homeList.first
             guard let cameraListCallback = self.cameraListCallback else { return }
             cameraListCallback(self.allDeviceList)
             
@@ -399,7 +399,7 @@ extension User {
             return
         }
         
-        Home.current = homeList[listIndex]
+        HejhomeHome.current = homeList[listIndex]
         
         getDeviceListByHome{ model in
             if let model = model {

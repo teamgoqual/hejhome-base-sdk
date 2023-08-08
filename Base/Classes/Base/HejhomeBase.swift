@@ -9,6 +9,8 @@ import Foundation
 import ThingSmartBaseKit
 import HejhomeSDKCommon
 
+public typealias HejhomeDeviceModel = HejhomeSDKCommon.HejhomeDeviceModel
+
 public enum HejhomeCameraType {
     case camera
     case doorbell
