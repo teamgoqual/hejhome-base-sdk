@@ -34,8 +34,10 @@ class Pairing: NSObject {
 
 // Initialize
 extension Pairing {
-    func initialize(isDebug: Bool = false, onSuccess: (()->())? = nil, onFailure: ((PairingErrorCode)->())? = nil) {
-        HejhomeBase.shared.isDebug = isDebug
+    func initialize(isDebug: Bool? = nil, onSuccess: (()->())? = nil, onFailure: ((PairingErrorCode)->())? = nil) {
+        if let isDebug = isDebug {
+            HejhomeBase.shared.isDebug = isDebug
+        }
         
         model.getProductIdList { arr in
             print("HejHomeSDK::: initializeData Succuess")

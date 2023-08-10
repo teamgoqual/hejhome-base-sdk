@@ -28,7 +28,7 @@ public class HejhomePairing: NSObject {
 
 // Initialize
 extension HejhomePairing {
-    public func initialize(isDebug: Bool = false, onSuccess: (()->())? = nil, onFailure: ((PairingErrorCode)->())? = nil) {
+    public func initialize(isDebug: Bool? = nil, onSuccess: (()->())? = nil, onFailure: ((PairingErrorCode)->())? = nil) {
         Pairing.shared.initialize(isDebug: isDebug, onSuccess: onSuccess, onFailure: onFailure)
         
         Pairing.shared.onPairingFailure = { device in
