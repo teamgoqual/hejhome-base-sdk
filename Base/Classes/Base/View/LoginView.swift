@@ -5,103 +5,105 @@
 //  Created by Dasom Kim on 2023/06/28.
 //
 
-import Foundation
 import UIKit
 
-
-
-class LoginView: UIView {
+class LoginViewController: UIViewController {
+    
     @IBOutlet weak var emailLabel: UILabel!
     @IBOutlet weak var pwTextField: UITextField!
     @IBOutlet weak var loginButton: UIButton!
+    @IBOutlet weak var switchButton: UIButton!
     
     @IBOutlet weak var pwView: UIView!
     @IBOutlet weak var errorView: UIView!
     
-    var view: UIView?
-    
     var loginButtonAction: (String) -> Void = { _ in }
     var closeButtonAction: () -> Void = {}
     
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        loadXib()
-    }
+    var email: String = ""
     
-    required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-        loadXib()
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        setData(email: email)
+        
+        pwTextField.delegate = self
+        setSwitchStatus(true)
+        setViewStatus(true)
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(hideKeyboard))
+        view.addGestureRecognizer(tapGesture)
     }
     
     func setData(email: String) {
         emailLabel.text = email
     }
     
+    func setButtonImage(_ name: String) {
+        if let bundlePath = Bundle.main.path(forResource: "HejhomeSDKBase", ofType: "bundle"),
+            let bundle = Bundle(path: bundlePath),
+            let image = UIImage(named: name, in: bundle, compatibleWith: nil) {
+            // 이미지를 로드하여 사용할 수 있습니다.
+            self.switchButton.setImage(image, for: .normal)
+        } else {
+            // 이미지를 로드할 수 없는 경우에 대한 처리를 여기에 추가합니다.
+        }
+    }
+    
+    func setSwitchStatus(_ status: Bool) {
+        DispatchQueue.main.async {
+            self.pwTextField.isSecureTextEntry = status
+            if status {
+                self.setButtonImage("secure-on")
+            } else {
+                self.setButtonImage("secure-off")
+            }
+        }
+    }
+    
+    @IBAction func clickPwSwitchButton(_ sender: Any) {
+        setSwitchStatus(!pwTextField.isSecureTextEntry)
+        
+    }
+    
     @IBAction func clickLoginButton(_ sender: Any) {
         guard let pw = pwTextField.text else {
-            
             setViewStatus(false)
             return
         }
         
         loginButtonAction(pw)
-        
     }
     
     @IBAction func clickCloseButton(_ sender: Any) {
-        self.removeFromSuperview()
-        closeButtonAction()
-    }
- 
-    private func loadXib() {
+        dismiss(animated: true, completion: nil)
         
-        let podBundle = Bundle(for: self.classForCoder)
-        if let bundleURL = podBundle.url(forResource: "HejhomeSDKBase", withExtension: "bundle") {
-            if let bundle = Bundle(url: bundleURL) {
-                let identifier = String(describing: type(of: self))
-                if let nib = UINib(nibName: identifier, bundle: bundle).instantiate(withOwner: self, options: nil).first as? UIView {
-                    view = nib
-                    self.view!.frame = self.bounds
-                    addSubview(self.view!)
-                    
-                    pwTextField.delegate = self
-                    pwTextField.isSecureTextEntry = true
-
-                    setViewStatus(true)
-                    let tapGesture = UITapGestureRecognizer(target: self, action: #selector(hideKeyboard))
-                    self.addGestureRecognizer(tapGesture)
-                }
-             } else {
-                assertionFailure("Could not load the bundle")
-             }
-
-        } else {
-           assertionFailure("Could not create a path to the bundle")
-        }
+        closeButtonAction()
     }
     
     @objc func hideKeyboard() {
-        self.endEditing(true)
+        view.endEditing(true)
     }
     
     func setViewStatus(_ status: Bool) {
-        if !status {
-            pwView.backgroundColor = UIColor(red: 194/225, green: 0/225, blue: 34/225, alpha: 1.0)
-            errorView.isHidden = false
-        } else {
-            pwView.backgroundColor = UIColor(red: 121/225, green: 118/225, blue: 114/225, alpha: 1.0)
-            errorView.isHidden = true
+        DispatchQueue.main.async {
+            if !status {
+                self.pwView.backgroundColor = UIColor(red: 194/225, green: 0/225, blue: 34/225, alpha: 1.0)
+                self.errorView.isHidden = false
+            } else {
+                self.pwView.backgroundColor = UIColor(red: 121/225, green: 118/225, blue: 114/225, alpha: 1.0)
+                self.errorView.isHidden = true
+            }
         }
     }
 }
 
-extension LoginView: UITextFieldDelegate {
+extension LoginViewController: UITextFieldDelegate {
     func textFieldDidBeginEditing(_ textField: UITextField) {
-        
+        // Your implementation here
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {
-        self.endEditing(true)
+        view.endEditing(true)
     }
-
 }

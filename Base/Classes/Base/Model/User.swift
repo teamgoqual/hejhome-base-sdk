@@ -102,34 +102,45 @@ class User: NSObject {
     
     func callNativeLoginView(_ email: String, onSDKLoginSuccess: @escaping () -> Void, onSDKSetupCancelled: @escaping (HejhomeLoginErrorCode?) -> Void) {
         DispatchQueue.main.async {
-            let window = UIApplication.shared.keyWindow!
-            let loginView = LoginView()
-            loginView.setData(email: email)
-            loginView.translatesAutoresizingMaskIntoConstraints = false
-            loginView.loginButtonAction = { pw in
-                User.shared.login(account: email, password: pw, timeout: 30) {
-                    DispatchQueue.main.async {
-                        onSDKLoginSuccess()
-                        loginView.removeFromSuperview()
+            let podBundle = Bundle(for: self.classForCoder)
+            var startLogin = false
+            if let bundleURL = podBundle.url(forResource: "HejhomeSDKBase", withExtension: "bundle") {
+                if let bundle = Bundle(url: bundleURL) {
+                    let login = LoginViewController(nibName: "LoginView", bundle: bundle)
+                    login.modalPresentationStyle = .fullScreen // 전체 화면으로 표시
+                    
+                    // 필요한 설정을 진행
+                    login.email = email
+                    login.loginButtonAction = { pw in
+                        guard startLogin == false else { return }
+                        
+                        startLogin = true
+                        User.shared.login(account: email, password: pw, timeout: 30) {
+                            startLogin = false
+                            DispatchQueue.main.async {
+                                onSDKLoginSuccess()
+                                login.dismiss(animated: false)
+                            }
+                        } onFailure: { error in
+                            startLogin = false
+                            DispatchQueue.main.async {
+                                login.setViewStatus(false)
+                            }
+                        }
                     }
-                } onFailure: { error in
-                    DispatchQueue.main.async {
-                        loginView.setViewStatus(false)
+                    login.closeButtonAction = {
+                        onSDKSetupCancelled(.SDK_USER_CANCEL)
                     }
-                }
+                    
+                    // 화면 표시
+                    getMostTopViewController()?.present(login, animated: false)
+                 } else {
+                    
+                 }
+
+            } else {
+               
             }
-            
-            loginView.closeButtonAction = {
-                onSDKSetupCancelled(.SDK_USER_CANCEL)
-            }
-            window.addSubview(loginView)
-            
-            NSLayoutConstraint.activate([
-                loginView.centerXAnchor.constraint(equalTo: window.centerXAnchor),
-                loginView.centerYAnchor.constraint(equalTo: window.centerYAnchor),
-                loginView.widthAnchor.constraint(equalToConstant: window.bounds.width),
-                loginView.heightAnchor.constraint(equalToConstant: window.bounds.height)
-            ])
         }
     }
     
@@ -389,18 +400,18 @@ extension User {
     }
     
     func checkNextIndex() {
-        if listIndex == homeList.count {
+        if listIndex >= homeList.count {
             HejhomeDevice.all = self.allDeviceList
             HejhomeHome.current = homeList.first
             guard let cameraListCallback = self.cameraListCallback else { return }
-            cameraListCallback(self.allDeviceList)
-            
             self.cameraListCallback = nil
+            cameraListCallback(self.allDeviceList)
             return
         }
         
         HejhomeHome.current = homeList[listIndex]
         
+        listIndex += 1
         getDeviceListByHome{ model in
             if let model = model {
                 let sub = self.getDeviceModelList(model)
@@ -409,8 +420,6 @@ extension User {
             
             self.checkNextIndex()
         }
-        
-        listIndex += 1
     }
     
     func addHome(_ name: String) {
