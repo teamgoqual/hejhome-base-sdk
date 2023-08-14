@@ -117,10 +117,10 @@ class User: NSObject {
                         startLogin = true
                         User.shared.login(account: email, password: pw, timeout: 30) {
                             startLogin = false
-                            DispatchQueue.main.async {
-                                onSDKLoginSuccess()
+                            onSDKLoginSuccess()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
                                 login.dismiss(animated: false)
-                            }
+                            })
                         } onFailure: { error in
                             startLogin = false
                             DispatchQueue.main.async {
