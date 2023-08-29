@@ -67,6 +67,11 @@ class User: NSObject {
         }
     }
     
+    func reset() {
+        accessCode = ""
+        account = ""
+    }
+    
     func testResetSessionData(complete: @escaping () -> Void, fail: @escaping (String) -> Void) {
         let user = ThingSmartUser.sharedInstance()
         UserData.updateUserData(lgAccessCode:User.shared.accessCode, uid: user.uid, userName: nil, sessionInfo: "") {

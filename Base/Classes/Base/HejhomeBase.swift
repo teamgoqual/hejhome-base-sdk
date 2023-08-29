@@ -41,6 +41,11 @@ public class HejhomeBase: NSObject {
         User.shared.setLgAccessCode(code, onSDKLoginSuccess: onSDKLoginSuccess, onSDKSetupCancelled: onSDKSetupCancelled, needLogin: needLogin)
     }
     
+    public func reset() {
+        User.shared.reset()
+    }
+    
+    
     public func callNativeLoginView(_ userId: String, onSuccess: @escaping () -> Void, onFailure: @escaping (HejhomeLoginErrorCode?) -> Void){
         User.shared.callNativeLoginView(userId, onSDKLoginSuccess: onSuccess, onSDKSetupCancelled: onFailure)
     }
