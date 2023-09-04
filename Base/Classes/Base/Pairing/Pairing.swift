@@ -78,7 +78,7 @@ extension Pairing {
         ThingSmartActivator.sharedInstance().startConfigWiFi(mode, ssid: ssid, password: password, token: token, timeout: timeout)
         
         if self.onPairingSuccess != nil, isApiToken {
-            self.devicePairingCheck(timeout: Int(timeout))
+            self.devicePairingCheck(mode: mode, timeout: Int(timeout))
         } else {
             checkProcessing = true
         }
@@ -194,11 +194,20 @@ extension Pairing {
     }
     
     
-    func devicePairingCheck(timeout: Int) {
+    func devicePairingCheck(mode: ThingActivatorMode, timeout: Int) {
         print("HejHomeSDK::: devicePairingCheck")
         
         if checkProcessing == true {
-            let device = PairingDevice.init(.PROCESSING_PAIRING_AP_MODE)
+            
+            var code: PairingErrorCode
+            switch mode {
+            case .AP: code = .PROCESSING_PAIRING_AP_MODE; break;
+            case .EZ: code = .PROCESSING_PAIRING_EZ_MODE; break;
+            case .qrCode: code = .PROCESSING_PAIRING_QR_MODE; break;
+            default: code = .PROCESSING_PAIRING_AP_MODE; break;
+            }
+            
+            let device = PairingDevice.init(code)
             self.sendPairingResult(false, device: device)
             return
         }
@@ -316,28 +325,30 @@ extension Pairing {
     func scanDevice(timeout: Int = 30) {
         
         if onPairingSuccess != nil {
-            self.devicePairingCheck(timeout: timeout)
+            self.devicePairingCheck(mode:.AP, timeout: timeout)
         }
     }
 }
 
-extension Pairing {
-    func successAction(_ device: PairingDevice) {
-        
-//        self.delegate?.hejhomePairingSuccess(device)
-        onPairingSuccess?(device)
-    }
-    
-    func failAction(_ device: PairingDevice) {
-        
-//        self.delegate?.hejhomePairingFailure(device)
-        onPairingFailure?(device)
-    }
-}
+//extension Pairing {
+//    func successAction(_ device: PairingDevice) {
+//
+////        self.delegate?.hejhomePairingSuccess(device)
+//        onPairingSuccess?(device)
+//    }
+//
+//    func failAction(_ device: PairingDevice) {
+//
+////        self.delegate?.hejhomePairingFailure(device)
+//        onPairingFailure?(device)
+//    }
+//}
 
 extension Pairing: ThingSmartActivatorDelegate {
     func activator(_ activator: ThingSmartActivator!, didReceiveDevice deviceModel: ThingSmartDeviceModel!, error: Error!) {
         print("HejHomeSDK::: didReceiveDevice:error:")
+        
+        guard !isApiToken else { return }
         
         if let error = error {
             
@@ -356,7 +367,7 @@ extension Pairing: ThingSmartActivatorDelegate {
             default:
                 device.error_code = String(PairingErrorCode.AUTO_PAIRING_FAIL_UNKNOWN.rawValue)
             }
-
+            
             self.sendPairingResult(false, device: device)
             return
         }
@@ -368,6 +379,8 @@ extension Pairing: ThingSmartActivatorDelegate {
     
     func activator(_ activator: ThingSmartActivator!, didReceiveDevice deviceModel: ThingSmartDeviceModel?, step: ThingActivatorStep, error: Error!) {
         print("HejHomeSDK::: didReceiveDevice:step:error")
+        guard !isApiToken else { return }
+        
         var device = PairingDevice()
 
         guard let deviceModel = deviceModel, !deviceModel.devId.isEmpty else { return }
