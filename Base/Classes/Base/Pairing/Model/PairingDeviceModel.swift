@@ -101,12 +101,14 @@ extension PairingDeviceModel {
         
         successAction = complete
         failAction = fail
-        print("HejHomeSDK::: searchPairingDevice")
+        print("HejHomeSDK::: searchPairingDevice \(timeout)")
         
         var device = PairingDevice.init()
         self.timeLeft = timeout
         
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true, block: { timer in
+            
+            print("HejHomeSDK::: searchPairingDevice timer \(self.timeLeft)")
             
             self.timeLeft -= 1
             if self.timeLeft <= 0 {
@@ -125,6 +127,7 @@ extension PairingDeviceModel {
             
             API.shared.get(urlString: "\(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.PAIRING_STATUS(token))?pairingStartTime=\(String(timeInSeconds))") { (response) in
                 print("HejHomeSDK::: searchPairingDevice \(self.timeLeft.description)")
+                print(response)
                 do {
                     self.pairingDeviceResult = try PairingDeviceResult.init(jsonDictionary: response)
                     if self.pairingDeviceResult.result != nil {
@@ -145,6 +148,7 @@ extension PairingDeviceModel {
                         
                     }
                 } catch {
+                    print("HejHomeSDK::: searchPairingDevice error \(error)")
 //                    device.error_code = String(PairingErrorCode.MAIN_PAIRING_API_EXCEPTION.rawValue)
                 }
             }
