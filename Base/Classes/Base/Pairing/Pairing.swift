@@ -75,8 +75,9 @@ extension Pairing {
         }
         
         ThingSmartActivator.sharedInstance().delegate = self
+        ThingSmartActivator.sharedInstance().stopConfigWiFi()
         ThingSmartActivator.sharedInstance().startConfigWiFi(mode, ssid: ssid, password: password, token: token, timeout: timeout)
-        
+
         print("HejHomeSDK::: startConfig \(self.onPairingSuccess != nil) \(isApiToken)")
         if self.onPairingSuccess != nil, isApiToken {
             self.devicePairingCheck(mode: mode, timeout: Int(timeout))
