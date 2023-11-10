@@ -123,6 +123,8 @@ extension PairingDeviceModel {
                     }
                     self.sendResult(fail, device: device)
                 }
+                
+                return
             }
             
             API.shared.get(urlString: "\(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.PAIRING_STATUS(token))?pairingStartTime=\(String(timeInSeconds))") { (response) in

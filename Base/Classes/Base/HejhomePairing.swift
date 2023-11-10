@@ -48,6 +48,10 @@ extension HejhomePairing {
         Pairing.shared.devicePairing(ssidName: ssidName, ssidPw: ssidPw, pairingToken: pairingToken, timeout: timeout, mode: mode)
     }
     
+    public func resetDevicePairing() {
+        Pairing.shared.stopConfig()
+    }
+    
     public func stopDevicePairing() {
         Pairing.shared.stopDevicePairing()
     }

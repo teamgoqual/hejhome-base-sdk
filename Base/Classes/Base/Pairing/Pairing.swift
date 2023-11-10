@@ -35,6 +35,7 @@ class Pairing: NSObject {
 // Initialize
 extension Pairing {
     func initialize(isDebug: Bool? = nil, onSuccess: (()->())? = nil, onFailure: ((PairingErrorCode)->())? = nil) {
+        
         if let isDebug = isDebug {
             HejhomeBase.shared.isDebug = isDebug
         }
@@ -68,6 +69,10 @@ extension Pairing {
         }
     }
     
+    func stopConfig() {
+        ThingSmartActivator.sharedInstance().stopConfigWiFi()
+    }
+    
     func startConfig(mode: ThingActivatorMode, ssid: String, password: String, token: String, timeout: TimeInterval = 100) {
         print("HejHomeSDK::: startConfig \(mode.rawValue) \(ssid) \(password) \(token) \(timeout)")
         if !User.shared.getLoginStatus() {
@@ -84,6 +89,7 @@ extension Pairing {
         } else {
             checkProcessing = true
         }
+        
     }
 }
 
