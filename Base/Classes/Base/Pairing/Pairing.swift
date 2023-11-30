@@ -59,7 +59,7 @@ extension Pairing {
     }
     
     func getPairingToken(onSuccess: @escaping ((String)->()), onFailure: @escaping  ((PairingErrorCode)->())) {
-        guard let homeId = HejhomeHome.current?.homeId else { return }
+        guard let homeId = HejhomeHome.current?.homeId else { onFailure(.AUTO_PAIRING_FAIL_INITIAL); return }
         
         ThingSmartActivator.sharedInstance().getTokenWithHomeId(homeId) { result in
             guard let result = result, !result.isEmpty else { onFailure(.AUTO_PAIRING_TOKEN_EMPTY); return }
@@ -79,6 +79,11 @@ extension Pairing {
             User.shared.setDefaultUserData()
         }
         
+        // reset
+        checkProcessing = false
+        model.resetTimer()
+        
+        // pairing
         ThingSmartActivator.sharedInstance().delegate = self
         ThingSmartActivator.sharedInstance().stopConfigWiFi()
         ThingSmartActivator.sharedInstance().startConfigWiFi(mode, ssid: ssid, password: password, token: token, timeout: timeout)

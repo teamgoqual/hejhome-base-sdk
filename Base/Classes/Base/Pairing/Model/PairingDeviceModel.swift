@@ -112,8 +112,7 @@ extension PairingDeviceModel {
             
             self.timeLeft -= 1
             if self.timeLeft <= 0 {
-                self.timer?.invalidate()
-                self.timer = nil
+                self.resetTimer()
                 
                 if let failedArray = self.pairingDeviceResult.result?.failed, !failedArray.isEmpty {
                     self.sendResult(fail, device: failedArray[0])
@@ -136,16 +135,14 @@ extension PairingDeviceModel {
                         
                         if let successArray = self.pairingDeviceResult.result?.success, successArray.count > 0 {
                             self.sendResult(complete, device: successArray[0])
-                            self.timer?.invalidate()
-                            self.timer = nil
+                            self.resetTimer()
                         }
                         
                     } else if self.pairingDeviceResult.code == String(PairingErrorCode.DEVICE_TOKEN_EXPIRED.rawValue)
                                 || self.pairingDeviceResult.code == String(PairingErrorCode.CHECK_REQ_INFORMATION.rawValue) {
                         device.error_code = self.pairingDeviceResult.code
                         self.sendResult(fail, device: device)
-                        self.timer?.invalidate()
-                        self.timer = nil
+                        self.resetTimer()
                     } else {
                         
                     }
@@ -157,10 +154,14 @@ extension PairingDeviceModel {
         })
     }
     
-    func stopTimer(code: PairingErrorCode) {
+    func resetTimer() {
         self.timeLeft = 0
         self.timer?.invalidate()
         self.timer = nil
+    }
+    
+    func stopTimer(code: PairingErrorCode) {
+        resetTimer()
         
         if failAction != nil {
             var device = PairingDevice.init()

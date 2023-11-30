@@ -29,7 +29,8 @@ public enum PairingErrorCode: Int, CustomStringConvertible {
     case AUTO_PAIRING_TOKEN_EMPTY = 7002
     case AUTO_PAIRING_FAIL = 7003
     case AUTO_PAIRING_FAIL_TIMEOUT = 7004
-    case AUTO_PAIRING_FAIL_UNKNOWN = 7005
+    case AUTO_PAIRING_FAIL_INITIAL = 7005
+    case AUTO_PAIRING_FAIL_UNKNOWN = 7000
     
     
     // Server
@@ -66,6 +67,7 @@ public enum PairingErrorCode: Int, CustomStringConvertible {
         case .AUTO_PAIRING_TOKEN_EMPTY:     return "Pairing Token is empty"
         case .AUTO_PAIRING_FAIL:            return "Pairing Fail"
         case .AUTO_PAIRING_FAIL_TIMEOUT:            return "Pairing Timeout"
+        case .AUTO_PAIRING_FAIL_INITIAL:            return "Pairing Fail (SDK Account Initialization Required)"
         case .AUTO_PAIRING_FAIL_UNKNOWN:            return "Pairing Fail (Unknown)"
             
             // server
