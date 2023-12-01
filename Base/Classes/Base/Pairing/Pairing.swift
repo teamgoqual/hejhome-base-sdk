@@ -144,18 +144,18 @@ extension Pairing {
 // token
 extension Pairing {
     
-    func getPairingToken(onSuccess: @escaping (String) -> Void) {
+    func getPairingToken(onSuccess: @escaping (String, PairingErrorCode?) -> Void) {
         print("HejHomeSDK::: getPairingToken \(self.apiPairingToken)")
         if self.apiPairingToken.isEmpty {
             getPairingToken { token in
                 self.isApiToken = false
-                onSuccess(token)
+                onSuccess(token, nil)
             } onFailure: { code in
-                onSuccess("")
+                onSuccess("", code)
             }
         } else {
             self.isApiToken = true
-            onSuccess(getDecodedToken())
+            onSuccess(getDecodedToken(), nil)
         }
     }
     
@@ -321,8 +321,16 @@ extension Pairing {
         
         let mode = (mode == .AP) ? ThingActivatorMode.AP : ThingActivatorMode.EZ;
         
-        getPairingToken { token in
+        getPairingToken { token, error in
             print("HejHomeSDK::: getPairingToken in \(token)")
+            
+            guard error == nil else {
+                let device = PairingDevice.init(error ?? .UNKNOWN)
+                self.checkProcessing = true
+                self.sendPairingResult(false, device: [device])
+                return
+            }
+            
             self.startConfig(mode:mode, ssid: self.ssidName, password: self.ssidPw, token: token, timeout: TimeInterval(timeout))
         }
     }
@@ -352,20 +360,6 @@ extension Pairing {
         }
     }
 }
-
-//extension Pairing {
-//    func successAction(_ device: PairingDevice) {
-//
-////        self.delegate?.hejhomePairingSuccess(device)
-//        onPairingSuccess?(device)
-//    }
-//
-//    func failAction(_ device: PairingDevice) {
-//
-////        self.delegate?.hejhomePairingFailure(device)
-//        onPairingFailure?(device)
-//    }
-//}
 
 extension Pairing: ThingSmartActivatorDelegate {
     func activator(_ activator: ThingSmartActivator!, didReceiveDevice deviceModel: ThingSmartDeviceModel!, error: Error!) {
