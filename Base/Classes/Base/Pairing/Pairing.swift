@@ -327,7 +327,7 @@ extension Pairing {
             guard error == nil else {
                 let device = PairingDevice.init(error ?? .UNKNOWN)
                 self.checkProcessing = true
-                self.sendPairingResult(false, device: [device])
+                self.sendPairingResult(false, device: device)
                 return
             }
             
