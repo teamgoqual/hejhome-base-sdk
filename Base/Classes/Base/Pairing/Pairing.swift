@@ -26,8 +26,11 @@ class Pairing: NSObject {
     
     //
     
-    var onPairingSuccess: ((PairingDevice) -> Void)?
-    var onPairingFailure: ((PairingDevice) -> Void)?
+    var pairingDeviceList: [PairingDevice] = []
+    var pairingSuccess = false
+    var onPairingSuccess: (([PairingDevice]) -> Void)?
+    var onPairingFailure: (([PairingDevice]) -> Void)?
+    var onPairingComplete: (([PairingDevice]) -> Void)?
     
 }
 
@@ -81,6 +84,7 @@ extension Pairing {
         
         // reset
         checkProcessing = false
+        pairingSuccess = false
         model.resetTimer()
         
         // pairing
@@ -222,51 +226,78 @@ extension Pairing {
             }
             
             let device = PairingDevice.init(code)
-            self.sendPairingResult(false, device: device)
+            self.sendPairingResult(false, device: [device])
             return
         }
         
         checkProcessing = true
-        self.pairingDeviceCheck(timeout: timeout)
+        self.pairingDeviceCheck(mode:mode, timeout: timeout)
     }
     
-    func pairingDeviceCheck(timeout: Int) {
+    func pairingDeviceCheck(mode: ThingActivatorMode, timeout: Int) {
         
         if let err = checkException() {
             let device = PairingDevice.init(err)
             self.checkProcessing = true
-            self.sendPairingResult(false, device: device)
+            self.sendPairingResult(false, device: [device])
             return
         }
         
         print("HejHomeSDK::: devicePairingCheck Start \(timeout)")
-        model.searchPairingDevice(self.getToken(), timeout: timeout) { result in
-            //
+        model.searchPairingDevice(self.getToken(), mode: mode, timeout: timeout) { result, time in
+            
+            if time == 0 {
+                self.pairingResultComplete()
+            }
+            
+            if mode == .EZ { self.checkProcessing = true }
             self.checkFoundPairingDevice(result)
             
-        } fail: { err in
-            var copyResult = err
-            if copyResult.error_code.isEmpty {
-                copyResult.error_code = String(PairingErrorCode.MAIN_PAIRING_EXCEPTION.rawValue)
+        } fail: { err, time in
+            
+            if time == 0 {
+                self.pairingResultComplete()
             }
-            self.sendPairingResult(false, device: copyResult)
+            
+            var copylist: [PairingDevice] = []
+            for device in err {
+                var copy = device
+                if copy.error_code.isEmpty {
+                    copy.error_code = String(PairingErrorCode.MAIN_PAIRING_EXCEPTION.rawValue)
+                }
+                copylist.append(copy)
+            }
+            
+            if mode == .EZ { self.checkProcessing = true }
+            self.sendPairingResult(false, device: copylist)
         }
     }
     
-    func checkFoundPairingDevice(_ result: PairingDevice) {
-        if self.pidList.contains(result.product_id) {
-            print("HejHomeSDK::: devicePairingCheck Success")
-            self.sendPairingResult(true, device: result)
-        } else {
-            let code = PairingErrorCode.NOT_SUPPORT_PAIRING_DEVICE
-            var copyResult = result
-            copyResult.error_code = String(code.rawValue)
-            self.sendPairingResult(false, device: copyResult)
+    func checkFoundPairingDevice(_ result: [PairingDevice]) {
+        
+        var resultList: [PairingDevice] = []
+        
+        for device in result {
+            if self.pidList.contains(device.product_id) {
+                print("HejHomeSDK::: devicePairingCheck Success")
+                resultList.append(device)
+            }
         }
+        
+        if resultList.count == 0 {
+            let code = PairingErrorCode.NOT_SUPPORT_PAIRING_DEVICE
+            var copyResult = result[0]
+            copyResult.error_code = String(code.rawValue)
+            
+            self.sendPairingResult(false, device: [copyResult])
+            return
+        }
+        
+        self.sendPairingResult(true, device: resultList)
 
     }
     
-    func sendPairingResult(_ status: Bool, device: PairingDevice) {
+    func sendPairingResult(_ status: Bool, device: [PairingDevice]) {
         print("HejHomeSDK::: sendPairingResult \(status)")
         
         if checkProcessing == true {
@@ -275,21 +306,42 @@ extension Pairing {
             ThingSmartActivator.sharedInstance().stopConfigWiFi()
             print("HejHomeSDK::: sendPairingResult stopConfigWiFi")
             if status == true {
-                print("HejHomeSDK::: sendPairingResult success")
-                if let success = self.onPairingSuccess {
-                    print("HejHomeSDK::: sendPairingResult success in")
-                    DispatchQueue.main.async {
-                        success(device)
-                    }
-                }
+                pairingResultSuccess(device)
             } else {
-                print("HejHomeSDK::: sendPairingResult failure")
-                if let fail = self.onPairingFailure {
-                    print("HejHomeSDK::: sendPairingResult failure in")
-                    DispatchQueue.main.async {
-                        fail(device)
-                    }
-                }
+                pairingResultFailure(device)
+            }
+        }
+    }
+    
+    func pairingResultSuccess(_ device: [PairingDevice]) {
+        print("HejHomeSDK::: sendPairingResult success")
+        
+        if let success = self.onPairingSuccess, pairingDeviceList != device {
+            pairingDeviceList = device
+            pairingSuccess = true
+            print("HejHomeSDK::: sendPairingResult success in")
+            DispatchQueue.main.async {
+                success(device)
+            }
+        }
+    }
+    
+    func pairingResultFailure(_ device: [PairingDevice]) {
+        print("HejHomeSDK::: sendPairingResult failure")
+        if let fail = self.onPairingFailure, pairingSuccess == false {
+            print("HejHomeSDK::: sendPairingResult failure in")
+            DispatchQueue.main.async {
+                fail(device)
+            }
+        }
+    }
+    
+    func pairingResultComplete() {
+        print("HejHomeSDK::: sendPairingResult complete")
+        if let complete = self.onPairingComplete {
+            DispatchQueue.main.async {
+                complete(self.pairingDeviceList)
+                self.pairingDeviceList = []
             }
         }
     }
@@ -315,7 +367,7 @@ extension Pairing {
         if let err = checkException() {
             let device = PairingDevice.init(err)
             self.checkProcessing = true
-            self.sendPairingResult(false, device: device)
+            self.sendPairingResult(false, device: [device])
             return
         }
         
@@ -327,7 +379,7 @@ extension Pairing {
             guard error == nil else {
                 let device = PairingDevice.init(error ?? .UNKNOWN)
                 self.checkProcessing = true
-                self.sendPairingResult(false, device: device)
+                self.sendPairingResult(false, device: [device])
                 return
             }
             
@@ -342,7 +394,7 @@ extension Pairing {
             model.stopTimer(code: .STOP_PROCESSING_PAIRING)
         } else {
             let device = PairingDevice.init(.STOP_PROCESSING_PAIRING)
-            self.sendPairingResult(false, device: device)
+            self.sendPairingResult(false, device: [device])
         }
     }
     
@@ -386,7 +438,7 @@ extension Pairing: ThingSmartActivatorDelegate {
                 device.error_code = String(PairingErrorCode.AUTO_PAIRING_FAIL_UNKNOWN.rawValue)
             }
             
-            self.sendPairingResult(false, device: device)
+            self.sendPairingResult(false, device: [device])
             return
         }
     }
@@ -412,11 +464,11 @@ extension Pairing: ThingSmartActivatorDelegate {
 
         if let error = error {
             device.error_code = String(PairingErrorCode.AUTO_PAIRING_FAIL.rawValue)
-            self.sendPairingResult(false, device: device)
+            self.sendPairingResult(false, device: [device])
             return
         }
 
-        checkFoundPairingDevice(device)
+        checkFoundPairingDevice([device])
     }
     
     func activator(_ activator: ThingSmartActivator!, didPassWIFIToSecurityLevelDeviceWithUUID uuid: String!) {

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import ThingSmartActivatorKit
 
 struct ProductIdList: Codable {
     var code: String = ""
@@ -16,7 +17,7 @@ struct ProductIdList: Codable {
     }
 }
 
-public struct PairingDevice: Codable {
+public struct PairingDevice: Codable, Equatable {
     @DefaultEmptyString var error_code: String = ""
     @DefaultEmptyString public var device_id: String = ""
     @DefaultEmptyString public var name: String = ""
@@ -63,8 +64,8 @@ class PairingDeviceModel: NSObject {
     var productIdListModel = ProductIdList()
     var pairingDeviceResult = PairingDeviceResult()
     
-    var successAction: ((PairingDevice)->())?
-    var failAction: ((PairingDevice) -> ())?
+    var successAction: (([PairingDevice], Int)->())?
+    var failAction: (([PairingDevice], Int) -> ())?
     
     var timer:Timer?
     var timeLeft: Int = 30
@@ -95,7 +96,7 @@ extension PairingDeviceModel {
             
     }
     
-    func searchPairingDevice(_ token: String, timeout:Int, complete: @escaping (PairingDevice) -> Void, fail: @escaping (PairingDevice) -> Void) {
+    func searchPairingDevice(_ token: String, mode: ThingActivatorMode, timeout:Int, complete: @escaping ([PairingDevice], Int) -> Void, fail: @escaping ([PairingDevice], Int) -> Void) {
         
         let timeInSeconds = Int64(Date().timeIntervalSince1970 * 100)
         
@@ -115,12 +116,14 @@ extension PairingDeviceModel {
                 self.resetTimer()
                 
                 if let failedArray = self.pairingDeviceResult.result?.failed, !failedArray.isEmpty {
-                    self.sendResult(fail, device: failedArray[0])
+                    self.sendResult(fail, device: failedArray)
+                } else if let successArray = self.pairingDeviceResult.result?.success, !successArray.isEmpty {
+                    self.sendResult(complete, device: successArray)
                 } else {
                     if device.error_code.isEmpty {
                         device.error_code = String(PairingErrorCode.NOT_FOUND_PAIRING_DEVICE.rawValue)
                     }
-                    self.sendResult(fail, device: device)
+                    self.sendResult(fail, device: [device])
                 }
                 
                 return
@@ -134,14 +137,14 @@ extension PairingDeviceModel {
                     if self.pairingDeviceResult.result != nil {
                         
                         if let successArray = self.pairingDeviceResult.result?.success, successArray.count > 0 {
-                            self.sendResult(complete, device: successArray[0])
-                            self.resetTimer()
+                            if mode == .AP || mode == .qrCode { self.resetTimer() }
+                            self.sendResult(complete, device: successArray)
                         }
                         
                     } else if self.pairingDeviceResult.code == String(PairingErrorCode.DEVICE_TOKEN_EXPIRED.rawValue)
                                 || self.pairingDeviceResult.code == String(PairingErrorCode.CHECK_REQ_INFORMATION.rawValue) {
                         device.error_code = self.pairingDeviceResult.code
-                        self.sendResult(fail, device: device)
+                        self.sendResult(fail, device: [device])
                         self.resetTimer()
                     } else {
                         
@@ -166,14 +169,17 @@ extension PairingDeviceModel {
         if failAction != nil {
             var device = PairingDevice.init()
             device.error_code = String(code.rawValue)
-            self.sendResult(failAction!, device: device)
+            self.sendResult(failAction!, device: [device])
         }
     }
     
-    func sendResult(_ block: @escaping (PairingDevice) -> Void, device: PairingDevice) {
-        block(device)
-        self.pairingDeviceResult = PairingDeviceResult.init()
-        self.successAction = nil
-        self.failAction = nil
+    func sendResult(_ block: @escaping ([PairingDevice], Int) -> Void, device: [PairingDevice]) {
+        block(device, self.timeLeft)
+        
+        if self.timeLeft == 0 {
+            self.pairingDeviceResult = PairingDeviceResult.init()
+            self.successAction = nil
+            self.failAction = nil
+        }
     }
 }
