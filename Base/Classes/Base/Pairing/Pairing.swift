@@ -27,10 +27,12 @@ class Pairing: NSObject {
     //
     
     var pairingDeviceList: [PairingDevice] = []
+    var pairingFailedDeviceList: [PairingDevice] = []
+    
     var pairingSuccess = false
     var onPairingSuccess: (([PairingDevice]) -> Void)?
     var onPairingFailure: (([PairingDevice]) -> Void)?
-    var onPairingComplete: (([PairingDevice]) -> Void)?
+    var onPairingComplete: (([PairingDevice], [PairingDevice]) -> Void)?
     
 }
 
@@ -276,25 +278,27 @@ extension Pairing {
     func checkFoundPairingDevice(_ result: [PairingDevice]) {
         
         var resultList: [PairingDevice] = []
+        var failList: [PairingDevice] = []
         
         for device in result {
             if self.pidList.contains(device.product_id) {
                 print("HejHomeSDK::: devicePairingCheck Success")
                 resultList.append(device)
+            } else {
+                let code = PairingErrorCode.NOT_SUPPORT_PAIRING_DEVICE
+                var copyResult = device
+                copyResult.error_code = String(code.rawValue)
+                failList.append(copyResult)
             }
         }
         
-        if resultList.count == 0 {
-            let code = PairingErrorCode.NOT_SUPPORT_PAIRING_DEVICE
-            var copyResult = result[0]
-            copyResult.error_code = String(code.rawValue)
-            
-            self.sendPairingResult(false, device: [copyResult])
-            return
+        if failList.count > 0 {
+            self.sendPairingResult(false, device: failList)
         }
         
-        self.sendPairingResult(true, device: resultList)
-
+        if resultList.count > 0 {
+            self.sendPairingResult(true, device: resultList)
+        }
     }
     
     func sendPairingResult(_ status: Bool, device: [PairingDevice]) {
@@ -328,7 +332,8 @@ extension Pairing {
     
     func pairingResultFailure(_ device: [PairingDevice]) {
         print("HejHomeSDK::: sendPairingResult failure")
-        if let fail = self.onPairingFailure, pairingSuccess == false {
+        if let fail = self.onPairingFailure, pairingSuccess == false, pairingFailedDeviceList != device {
+            pairingFailedDeviceList = device
             print("HejHomeSDK::: sendPairingResult failure in")
             DispatchQueue.main.async {
                 fail(device)
@@ -337,10 +342,13 @@ extension Pairing {
     }
     
     func pairingResultComplete() {
+        let delayInSeconds: Double = 0.5
+        let delayTime = DispatchTime.now() + delayInSeconds
+
         print("HejHomeSDK::: sendPairingResult complete")
         if let complete = self.onPairingComplete {
-            DispatchQueue.main.async {
-                complete(self.pairingDeviceList)
+            DispatchQueue.main.asyncAfter(deadline: delayTime) {
+                complete(self.pairingDeviceList, self.pairingFailedDeviceList)
                 self.pairingDeviceList = []
             }
         }

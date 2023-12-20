@@ -11,7 +11,7 @@ import ThingSmartActivatorKit
 public protocol HejhomePairingDelegate: AnyObject {
     func hejhomePairingSuccess(_ deviceList: [PairingDevice])
     func hejhomePairingFailure(_ deviceList: [PairingDevice])
-    func hejhomePairingProcessComplete(_ deviceList: [PairingDevice])
+    func hejhomePairingProcessComplete(_ deviceList: [PairingDevice], failList: [PairingDevice])
 }
 
 public class HejhomePairing: NSObject {
@@ -40,8 +40,8 @@ extension HejhomePairing {
             self.delegate?.hejhomePairingSuccess(deviceList)
         }
         
-        Pairing.shared.onPairingComplete = { deviceList in
-            self.delegate?.hejhomePairingProcessComplete(deviceList)
+        Pairing.shared.onPairingComplete = { deviceList, failList in
+            self.delegate?.hejhomePairingProcessComplete(deviceList, failList: failList)
         }
     }
     
