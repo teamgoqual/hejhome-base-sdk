@@ -457,22 +457,17 @@ extension User {
 
 extension User: ThingSmartHomeDelegate{
     func homeDidUpdateInfo(_ home: ThingSmartHome!) {
-        getAllDeviceList()
     }
     
     func home(_ home: ThingSmartHome!, didAddDeivice device: ThingSmartDeviceModel!) {
-        getAllDeviceList()
     }
     
     func home(_ home: ThingSmartHome!, didRemoveDeivice devId: String!) {
-        getAllDeviceList()
     }
     
     func home(_ home: ThingSmartHome!, deviceInfoUpdate device: ThingSmartDeviceModel!) {
-        getAllDeviceList()
     }
     
     func home(_ home: ThingSmartHome!, device: ThingSmartDeviceModel!, dpsUpdate dps: [AnyHashable : Any]!) {
-        getAllDeviceList()
     }
 }
