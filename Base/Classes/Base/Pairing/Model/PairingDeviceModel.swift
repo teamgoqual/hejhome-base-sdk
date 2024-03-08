@@ -96,7 +96,7 @@ extension PairingDeviceModel {
             
     }
     
-    func searchPairingDevice(_ token: String, mode: ThingActivatorMode, timeout:Int, complete: @escaping ([PairingDevice], Int) -> Void, fail: @escaping ([PairingDevice], Int) -> Void) {
+    func searchPairingDevice(_ token: String, mode: ThingActivatorMode, timeout:Int, timeoutMargin: Int, complete: @escaping ([PairingDevice], Int) -> Void, fail: @escaping ([PairingDevice], Int) -> Void) {
         
         let timeInSeconds = Int64(Date().timeIntervalSince1970 * 100)
         

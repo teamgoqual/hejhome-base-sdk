@@ -49,8 +49,8 @@ extension HejhomePairing {
         Pairing.shared.pairingCodeImage(ssid: ssid, password: password, token: token, size: size, onSuccess: onSuccess, onFailure: onFailure)
     }
     
-    public func devicePairing(ssidName: String, ssidPw: String, pairingToken: String = "", timeout:Int = 120, mode: PairingMode = .AP) {
-        Pairing.shared.devicePairing(ssidName: ssidName, ssidPw: ssidPw, pairingToken: pairingToken, timeout: timeout, mode: mode)
+    public func devicePairing(ssidName: String, ssidPw: String, pairingToken: String = "", timeout:Int = 120, timeoutMargin:Int = 0, mode: PairingMode = .AP) {
+        Pairing.shared.devicePairing(ssidName: ssidName, ssidPw: ssidPw, pairingToken: pairingToken, timeout: timeout, timeoutMargin: timeoutMargin, mode: mode)
     }
     
     public func resetDevicePairing() {

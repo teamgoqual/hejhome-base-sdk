@@ -457,7 +457,7 @@ extension User {
 
 extension User: ThingSmartHomeDelegate{
     func homeDidUpdateInfo(_ home: ThingSmartHome!) {
-//        getAllDeviceList()
+
     }
     
     func home(_ home: ThingSmartHome!, didAddDeivice device: ThingSmartDeviceModel!) {
@@ -469,10 +469,10 @@ extension User: ThingSmartHomeDelegate{
     }
     
     func home(_ home: ThingSmartHome!, deviceInfoUpdate device: ThingSmartDeviceModel!) {
-//        getAllDeviceList()
+
     }
     
     func home(_ home: ThingSmartHome!, device: ThingSmartDeviceModel!, dpsUpdate dps: [AnyHashable : Any]!) {
-//        getAllDeviceList()
+
     }
 }

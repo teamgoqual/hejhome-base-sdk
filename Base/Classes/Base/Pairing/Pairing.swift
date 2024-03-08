@@ -19,6 +19,7 @@ class Pairing: NSObject {
     var ssidPw = ""
     var apiPairingToken = ""
     
+    var pairingMode: HejhomePairing.PairingMode = .AP
     var checkProcessing = false
     var isApiToken = false
     
@@ -75,10 +76,11 @@ extension Pairing {
     }
     
     func stopConfig() {
+        model.resetTimer()
         ThingSmartActivator.sharedInstance().stopConfigWiFi()
     }
     
-    func startConfig(mode: ThingActivatorMode, ssid: String, password: String, token: String, timeout: TimeInterval = 100) {
+    func startConfig(mode: ThingActivatorMode, ssid: String, password: String, token: String, timeout: TimeInterval = 100, timeoutMargin: TimeInterval = 0) {
         print("HejHomeSDK::: startConfig \(mode.rawValue) \(ssid) \(password) \(token) \(timeout)")
         if !User.shared.getLoginStatus() {
             User.shared.setDefaultUserData()
@@ -92,11 +94,11 @@ extension Pairing {
         // pairing
         ThingSmartActivator.sharedInstance().delegate = self
         ThingSmartActivator.sharedInstance().stopConfigWiFi()
-        ThingSmartActivator.sharedInstance().startConfigWiFi(mode, ssid: ssid, password: password, token: token, timeout: timeout)
+        ThingSmartActivator.sharedInstance().startConfigWiFi(mode, ssid: ssid, password: password, token: token, timeout: timeout - timeoutMargin)
 
         print("HejHomeSDK::: startConfig \(self.onPairingSuccess != nil) \(isApiToken)")
         if self.onPairingSuccess != nil, isApiToken {
-            self.devicePairingCheck(mode: mode, timeout: Int(timeout))
+            self.devicePairingCheck(mode: mode, timeout: Int(timeout), timeoutMargin: Int(timeoutMargin))
         } else {
             checkProcessing = true
         }
@@ -214,7 +216,7 @@ extension Pairing {
     }
     
     
-    func devicePairingCheck(mode: ThingActivatorMode, timeout: Int) {
+    func devicePairingCheck(mode: ThingActivatorMode, timeout: Int, timeoutMargin: Int) {
         print("HejHomeSDK::: devicePairingCheck \(mode.rawValue) \(timeout)")
         
         if checkProcessing == true {
@@ -233,10 +235,10 @@ extension Pairing {
         }
         
         checkProcessing = true
-        self.pairingDeviceCheck(mode:mode, timeout: timeout)
+        self.pairingDeviceCheck(mode:mode, timeout: timeout, timeoutMargin: timeoutMargin)
     }
     
-    func pairingDeviceCheck(mode: ThingActivatorMode, timeout: Int) {
+    func pairingDeviceCheck(mode: ThingActivatorMode, timeout: Int, timeoutMargin: Int) {
         
         if let err = checkException() {
             let device = PairingDevice.init(err)
@@ -246,10 +248,14 @@ extension Pairing {
         }
         
         print("HejHomeSDK::: devicePairingCheck Start \(timeout)")
-        model.searchPairingDevice(self.getToken(), mode: mode, timeout: timeout) { result, time in
+        model.searchPairingDevice(self.getToken(), mode: mode, timeout: timeout, timeoutMargin: timeoutMargin) { result, time in
             
             if time == 0 {
                 self.pairingResultComplete()
+            }
+            
+            if time == timeoutMargin {
+                ThingSmartActivator.sharedInstance().stopConfigWiFi()
             }
             
             if mode == .EZ { self.checkProcessing = true }
@@ -259,6 +265,10 @@ extension Pairing {
             
             if time == 0 {
                 self.pairingResultComplete()
+            }
+            
+            if time == timeoutMargin {
+                ThingSmartActivator.sharedInstance().stopConfigWiFi()
             }
             
             var copylist: [PairingDevice] = []
@@ -307,7 +317,9 @@ extension Pairing {
         if checkProcessing == true {
             checkProcessing = false
             
-            ThingSmartActivator.sharedInstance().stopConfigWiFi()
+            if self.pairingMode != .EASY {
+                stopConfig()
+            }
             print("HejHomeSDK::: sendPairingResult stopConfigWiFi")
             if status == true {
                 pairingResultSuccess(device)
@@ -345,6 +357,8 @@ extension Pairing {
         let delayInSeconds: Double = 0.5
         let delayTime = DispatchTime.now() + delayInSeconds
 
+        stopConfig()
+        
         print("HejHomeSDK::: sendPairingResult complete")
         if let complete = self.onPairingComplete {
             DispatchQueue.main.asyncAfter(deadline: delayTime) {
@@ -357,21 +371,24 @@ extension Pairing {
 
 extension Pairing {
     
-    func devicePairing(ssidName: String, ssidPw: String, pairingToken: String, timeout:Int = 120, mode: HejhomePairing.PairingMode = .AP) {
+    func devicePairing(ssidName: String, ssidPw: String, pairingToken: String, timeout:Int = 120, timeoutMargin:Int = 0, mode: HejhomePairing.PairingMode = .AP) {
         print("HejHomeSDK::: devicePairing \(ssidName) \(ssidPw) \(pairingToken)")
         self.apiPairingToken = pairingToken
         self.ssidName = ssidName
         self.ssidPw = ssidPw
+        self.pairingMode = mode
         
-        self.startPairingAction(mode: mode, timeout: timeout)
+        self.startPairingAction(mode: mode, timeout: timeout, timeoutMargin: timeoutMargin)
     }
     
     
     
-    func startPairingAction(mode: HejhomePairing.PairingMode, timeout: Int = 100) {
+    func startPairingAction(mode: HejhomePairing.PairingMode, timeout: Int = 100, timeoutMargin:Int = 0) {
         print("HejHomeSDK::: startPairing \(mode)")
         print("HejHomeSDK::: getPairingToken \(self.apiPairingToken)")
 
+        self.pairingMode = mode
+        
         if let err = checkException() {
             let device = PairingDevice.init(err)
             self.checkProcessing = true
@@ -391,12 +408,14 @@ extension Pairing {
                 return
             }
             
-            self.startConfig(mode:mode, ssid: self.ssidName, password: self.ssidPw, token: token, timeout: TimeInterval(timeout))
+            self.startConfig(mode:mode, ssid: self.ssidName, password: self.ssidPw, token: token, timeout: TimeInterval(timeout), timeoutMargin: TimeInterval(timeoutMargin))
         }
     }
     
     func stopDevicePairing() {
         print("HejHomeSDK::: stopDevicePairing")
+        
+        stopConfig()
         
         if checkProcessing == true {
             model.stopTimer(code: .STOP_PROCESSING_PAIRING)
@@ -416,7 +435,7 @@ extension Pairing {
     func scanDevice(timeout: Int = 30) {
         
         if onPairingSuccess != nil {
-            self.devicePairingCheck(mode:.AP, timeout: timeout)
+            self.devicePairingCheck(mode:.AP, timeout: timeout, timeoutMargin: 0)
         }
     }
 }
