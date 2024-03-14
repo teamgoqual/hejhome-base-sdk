@@ -262,12 +262,17 @@ class User: NSObject {
         }
     }
     
-    func setDefaultUserData() {
-        ThingSmartUser.sharedInstance().reset(userInfo: ["sid": "az164785J5247000lnUwfvb3a86927a7f4a7c7cd86fc9de6e1e3e62f",
-                                                         "uid": "az1647855247000lUwfv",
-                                                         "isLogin": false,
-                                                         "domain": ["mobileApiUrl": "https://a1.tuyaus.com"],
-                                                         "ecode": "z2z845J727145aaa"], source: 0)
+    func setDefaultUserData(completion: @escaping () -> Void) {
+        
+        ThingSmartUser.sharedInstance().login(byEmail: "82", email: "gqsdktest@gmail.com", password: "gqsdktest11") {
+            completion()
+        }
+        
+//        ThingSmartUser.sharedInstance().reset(userInfo: ["sid": "az164785J5247000lnUwfvb3a86927a7f4a7c7cd86fc9de6e1e3e62f",
+//                                                         "uid": "az1647855247000lUwfv",
+//                                                         "isLogin": false,
+//                                                         "domain": ["mobileApiUrl": "https://a1.tuyaus.com"],
+//                                                         "ecode": "z2z845J727145aaa"], source: 0)
     }
     
     func sendVerificationCode(email: String, onSuccess: @escaping () -> Void, onFailure: @escaping (Error?) -> Void) {

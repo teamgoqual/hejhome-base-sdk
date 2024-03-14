@@ -82,28 +82,33 @@ extension Pairing {
     
     func startConfig(mode: ThingActivatorMode, ssid: String, password: String, token: String, timeout: TimeInterval = 100, timeoutMargin: TimeInterval = 0) {
         print("HejHomeSDK::: startConfig \(mode.rawValue) \(ssid) \(password) \(token) \(timeout)")
-        if !User.shared.getLoginStatus() {
-            User.shared.setDefaultUserData()
-        }
         
-        // reset
-        checkProcessing = false
-        pairingSuccess = false
-        model.resetTimer()
-        
-        // pairing
-        ThingSmartActivator.sharedInstance().delegate = self
-        ThingSmartActivator.sharedInstance().stopConfigWiFi()
-        ThingSmartActivator.sharedInstance().startConfigWiFi(mode, ssid: ssid, password: password, token: token, timeout: timeout - timeoutMargin)
+        let completion: () -> Void = {
+            // reset
+            self.checkProcessing = false
+            self.pairingSuccess = false
+            self.model.resetTimer()
+            
+            // pairing
+            ThingSmartActivator.sharedInstance().delegate = self
+            ThingSmartActivator.sharedInstance().stopConfigWiFi()
+            ThingSmartActivator.sharedInstance().startConfigWiFi(mode, ssid: ssid, password: password, token: token, timeout: timeout - timeoutMargin)
 
-        print("HejHomeSDK::: startConfig \(self.onPairingSuccess != nil) \(isApiToken)")
-        if self.onPairingSuccess != nil, isApiToken {
-            self.devicePairingCheck(mode: mode, timeout: Int(timeout), timeoutMargin: Int(timeoutMargin))
-        } else {
-            checkProcessing = true
+            print("HejHomeSDK::: startConfig \(self.onPairingSuccess != nil) \(self.isApiToken)")
+            if self.onPairingSuccess != nil, self.isApiToken {
+                self.devicePairingCheck(mode: mode, timeout: Int(timeout), timeoutMargin: Int(timeoutMargin))
+            } else {
+                self.checkProcessing = true
+            }
         }
         
+        if User.shared.getLoginStatus() {
+            completion()
+        } else {
+            User.shared.setDefaultUserData(completion: completion)
+        }
     }
+    
 }
 
 extension Pairing {
