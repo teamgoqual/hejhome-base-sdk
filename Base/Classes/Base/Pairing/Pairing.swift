@@ -42,25 +42,33 @@ class Pairing: NSObject {
 extension Pairing {
     func initialize(isDebug: Bool? = nil, onSuccess: (()->())? = nil, onFailure: ((PairingErrorCode)->())? = nil) {
         
-        if let isDebug = isDebug {
-            HejhomeBase.shared.isDebug = isDebug
+        let completion: () -> Void = {
+            if let isDebug = isDebug {
+                HejhomeBase.shared.isDebug = isDebug
+            }
+            
+            self.model.getProductIdList { arr in
+                print("HejHomeSDK::: initializeData Succuess")
+                self.pidList = arr
+                DispatchQueue.main.async {
+                    if let success = onSuccess {
+                        success()
+                    }
+                }
+            } fail: { err in
+                print("HejHomeSDK::: initializeData Error \(err)")
+                DispatchQueue.main.async {
+                    if let onFailure = onFailure {
+                        onFailure(.INTERNAL_SERVER_ERROR)
+                    }
+                }
+            }
         }
         
-        model.getProductIdList { arr in
-            print("HejHomeSDK::: initializeData Succuess")
-            self.pidList = arr
-            DispatchQueue.main.async {
-                if let success = onSuccess {
-                    success()
-                }
-            }
-        } fail: { err in
-            print("HejHomeSDK::: initializeData Error \(err)")
-            DispatchQueue.main.async {
-                if let onFailure = onFailure {
-                    onFailure(.INTERNAL_SERVER_ERROR)
-                }
-            }
+        if User.shared.getLoginStatus() {
+            completion()
+        } else {
+            User.shared.setDefaultUserData(completion: completion)
         }
     }
     
@@ -83,29 +91,25 @@ extension Pairing {
     func startConfig(mode: ThingActivatorMode, ssid: String, password: String, token: String, timeout: TimeInterval = 100, timeoutMargin: TimeInterval = 0) {
         print("HejHomeSDK::: startConfig \(mode.rawValue) \(ssid) \(password) \(token) \(timeout)")
         
-        let completion: () -> Void = {
-            // reset
-            self.checkProcessing = false
-            self.pairingSuccess = false
-            self.model.resetTimer()
-            
-            // pairing
-            ThingSmartActivator.sharedInstance().delegate = self
-            ThingSmartActivator.sharedInstance().stopConfigWiFi()
-            ThingSmartActivator.sharedInstance().startConfigWiFi(mode, ssid: ssid, password: password, token: token, timeout: timeout - timeoutMargin)
-
-            print("HejHomeSDK::: startConfig \(self.onPairingSuccess != nil) \(self.isApiToken)")
-            if self.onPairingSuccess != nil, self.isApiToken {
-                self.devicePairingCheck(mode: mode, timeout: Int(timeout), timeoutMargin: Int(timeoutMargin))
-            } else {
-                self.checkProcessing = true
-            }
+        if !User.shared.getLoginStatus() {
+            print("HejHomeSDK::: startConfig login session Error")
         }
         
-        if User.shared.getLoginStatus() {
-            completion()
+        // reset
+        self.checkProcessing = false
+        self.pairingSuccess = false
+        self.model.resetTimer()
+        
+        // pairing
+        ThingSmartActivator.sharedInstance().delegate = self
+        ThingSmartActivator.sharedInstance().stopConfigWiFi()
+        ThingSmartActivator.sharedInstance().startConfigWiFi(mode, ssid: ssid, password: password, token: token, timeout: timeout - timeoutMargin)
+
+        print("HejHomeSDK::: startConfig \(self.onPairingSuccess != nil) \(self.isApiToken)")
+        if self.onPairingSuccess != nil, self.isApiToken {
+            self.devicePairingCheck(mode: mode, timeout: Int(timeout), timeoutMargin: Int(timeoutMargin))
         } else {
-            User.shared.setDefaultUserData(completion: completion)
+            self.checkProcessing = true
         }
     }
     
