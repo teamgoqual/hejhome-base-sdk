@@ -42,12 +42,12 @@ extension UserData {
         }
     }
     
-    static func updateUserData(lgAccessCode: String, uid: String, userName: String?, sessionInfo: String, complete: @escaping () -> Void, fail: @escaping (String) -> Void){
+    static func updateUserData(param: UserInfo, complete: @escaping () -> Void, fail: @escaping (String) -> Void){
         print("HejHomeSDK::: updateUserData \(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER)")
         
-        let param = UserInfo(uid: uid, userName: userName, eventToken: lgAccessCode, sessionInfo: sessionInfo)
+//        let param = UserInfo(uid: uid, userName: userName, eventToken: lgAccessCode, sessionInfo: sessionInfo)
         
-        API.shared.post(urlString: "\(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER)", parameter: param, lgAccessCode: lgAccessCode) { (response) in
+        API.shared.post(urlString: "\(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER)", parameter: param, lgAccessCode: param.eventToken) { (response) in
             do {
                 if let errorCode = response["errorCode"] as? Int {
                     print("HejHomeSDK::: fail code - \(errorCode)")

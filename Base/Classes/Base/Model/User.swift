@@ -25,8 +25,7 @@ class User: NSObject {
     
     var appkey = ""
     var secretkey = ""
-    var accessCode = ""
-    var account = ""
+    var savedUserInfo = UserInfo()
     
     func getLoginStatus() -> Bool {
         return ThingSmartUser.sharedInstance().isLogin
@@ -46,7 +45,7 @@ class User: NSObject {
     func setLgAccessCode(_ code: String, onSDKLoginSuccess: @escaping () -> Void, onSDKSetupCancelled: @escaping (HejhomeLoginErrorCode?) -> Void, needLogin: @escaping (String) -> Void) {
         guard !code.isEmpty else { onSDKSetupCancelled(.SDK_EMPTY_TOKEN); return }
         
-        accessCode = code
+        savedUserInfo.eventToken = code
         UserData.getUserId(lgAccessCode: code) { info in
             if !info.sessionInfo.isEmpty {
                 if User.shared.getLoginStatus() == true, ThingSmartUser.sharedInstance().uid == info.uid {
@@ -68,18 +67,9 @@ class User: NSObject {
     }
     
     func reset() {
-        accessCode = ""
-        account = ""
+        savedUserInfo = UserInfo()
     }
-    
-    func testResetSessionData(complete: @escaping () -> Void, fail: @escaping (String) -> Void) {
-        let user = ThingSmartUser.sharedInstance()
-        UserData.updateUserData(lgAccessCode:User.shared.accessCode, uid: user.uid, userName: nil, sessionInfo: "") {
-            complete()
-        } fail: { error in
-            fail(error)
-        }
-    }
+
     
     func setSavedUserData(_ info: UserInfo, onSDKLoginSuccess: @escaping () -> Void, onSDKSetupCancelled: @escaping (HejhomeLoginErrorCode?) -> Void) {
         guard !info.sessionInfo.isEmpty else { return }
@@ -152,7 +142,7 @@ class User: NSObject {
     func login(account: String, password: String, timeout: Int, onSuccess: @escaping () -> Void, onFailure: @escaping (HejhomeLoginErrorCode?) -> Void) {
         let countryCode = "82"
         
-        self.account = account
+        self.savedUserInfo.userName = account
         if account.isValidEmail() {
             ThingSmartUser.sharedInstance().login(byEmail: countryCode,
                                                   email: account,
@@ -193,11 +183,14 @@ class User: NSObject {
     func updateSessionData(onSuccess: @escaping () -> Void, onFailure: @escaping (HejhomeLoginErrorCode?) -> Void) {
         let user = UserConverter(fromThingUser: ThingSmartUser.sharedInstance())
         let encoder = JSONEncoder()
-        if let jsonData = try? encoder.encode(user) {
+        if let jsonData = try? encoder.encode(user), let lgAccessCode = User.shared.savedUserInfo.eventToken, let userName = User.shared.savedUserInfo.userName {
             if let jsonString = String(data: jsonData, encoding: .utf8) {
                 print(jsonString)
                 let encodedString = Crypto().encrypt(jsonString)
-                UserData.updateUserData(lgAccessCode:User.shared.accessCode, uid: user.uid, userName:self.account, sessionInfo: encodedString) {
+                
+                let param = UserInfo(uid: user.uid, userName: userName, eventToken: lgAccessCode, sessionInfo: encodedString)
+                User.shared.savedUserInfo = param
+                UserData.updateUserData(param: param) {
                     print("HejhomeSDK::: login success")
                     onSuccess()
                 } fail: { error in
@@ -212,7 +205,7 @@ class User: NSObject {
     
     func userCheckAfterLogin(uid: String, timeout: Int, onSuccess: @escaping () -> Void, onFailure: @escaping (HejhomeLoginErrorCode?) -> Void) {
         
-        if User.shared.accessCode != "", !User.shared.accessCode.isEmpty {
+        if let lgAccessCode = User.shared.savedUserInfo.eventToken, lgAccessCode != "", !lgAccessCode.isEmpty, User.shared.savedUserInfo.uid == uid {
             self.updateSessionData {
                 onSuccess()
             } onFailure: { error in
@@ -224,7 +217,7 @@ class User: NSObject {
         usercheck.searchUserToken(uid: uid, timeout: timeout) { tokenInfo in
             guard !tokenInfo.userToken.isEmpty else { onFailure(.SDK_EMPTY_TOKEN); return }
             
-            User.shared.accessCode = tokenInfo.userToken
+            User.shared.savedUserInfo.eventToken = tokenInfo.userToken
             self.updateSessionData {
                 onSuccess()
             } onFailure: { error in
@@ -236,7 +229,9 @@ class User: NSObject {
     }
     
     func checkUpdatedSessionData(onSuccess: @escaping () -> Void, onFailure: @escaping (HejhomeLoginErrorCode?) -> Void) {
-        UserData.getUserId(lgAccessCode: User.shared.accessCode) { info in
+        guard let lgAccessCode = User.shared.savedUserInfo.eventToken else { return }
+            
+        UserData.getUserId(lgAccessCode: lgAccessCode) { info in
             if info.uid == ThingSmartUser.sharedInstance().uid {
                 onSuccess()
             } else {
@@ -382,6 +377,7 @@ extension User {
         var list:[HejhomeDeviceModel] = []
         
         for d in home.deviceList {
+            
             let dm = HejhomeDeviceModel(deviceId: d.devId, productId: d.productId, name: d.name, homeId: home.homeId)
             list.append(dm)
         }
