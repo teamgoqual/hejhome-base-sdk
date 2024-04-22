@@ -26,6 +26,12 @@ public protocol HejhomeBaseDelegate: AnyObject {
 public class HejhomeBase: NSObject {
     @objc public static let shared = HejhomeBase()
     
+    public var userAccessToken: String? {
+        get {
+            return User.shared.savedUserInfo.eventToken
+        }
+    }
+    
     public weak var delegate: HejhomeBaseDelegate?
     var isDebug = true
     
