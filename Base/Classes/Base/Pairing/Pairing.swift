@@ -396,6 +396,8 @@ extension Pairing {
         print("HejHomeSDK::: startPairing \(mode)")
         print("HejHomeSDK::: getPairingToken \(self.apiPairingToken)")
 
+        
+        self.pairingDeviceList = []
         self.pairingMode = mode
         
         if let err = checkException() {
