@@ -53,7 +53,13 @@ class User: NSObject {
                     return
                 }
                 
-                User.shared.setSavedUserData(info, onSDKLoginSuccess: onSDKLoginSuccess, onSDKSetupCancelled: onSDKSetupCancelled)
+                User.shared.setSavedUserData(info, onSDKLoginSuccess: onSDKLoginSuccess, onSDKSetupCancelled: onSDKSetupCancelled, needLogin: {
+                    if let userName = info.userName {
+                        needLogin(userName)
+                    } else {
+                        onSDKSetupCancelled(.SDK_WRONG_SESSION_DATA)
+                    }
+                })
             } else if let userName = info.userName, !userName.isEmpty {
                 needLogin(userName)
             }
@@ -71,7 +77,7 @@ class User: NSObject {
     }
 
     
-    func setSavedUserData(_ info: UserInfo, onSDKLoginSuccess: @escaping () -> Void, onSDKSetupCancelled: @escaping (HejhomeLoginErrorCode?) -> Void) {
+    func setSavedUserData(_ info: UserInfo, onSDKLoginSuccess: @escaping () -> Void, onSDKSetupCancelled: @escaping (HejhomeLoginErrorCode?) -> Void, needLogin: @escaping () -> Void) {
         guard !info.sessionInfo.isEmpty else { return }
         
         let session = Crypto().decrypt(info.sessionInfo)
@@ -84,8 +90,10 @@ class User: NSObject {
                     ThingSmartUser.sharedInstance().reset(userInfo: dictionary, source: 0)
                     
                     self.start(key: self.appkey, secret: self.secretkey)
-                    HejhomeBase.shared.getUserDevice { list in
+                    User.shared.getUserDevice { list in
                         onSDKLoginSuccess()
+                    } fail: {
+                        needLogin()
                     }
                 }
             } catch {
@@ -139,36 +147,37 @@ class User: NSObject {
         }
     }
     
-    func login(account: String, password: String, timeout: Int, onSuccess: @escaping () -> Void, onFailure: @escaping (HejhomeLoginErrorCode?) -> Void) {
+    func sampleLogin(_ email: String, pw: String, onSDKLoginSuccess: @escaping () -> Void, onSDKSetupCancelled: @escaping (HejhomeLoginErrorCode?) -> Void) {
+        User.shared.login(account: email, password: pw, timeout: 30, onSuccess: {
+            onSDKLoginSuccess()
+        }, onFailure: { error in
+            onSDKSetupCancelled(.SDK_USER_CANCEL)
+        }, useToken: false)
+    }
+    
+    func login(account: String, password: String, timeout: Int, onSuccess: @escaping () -> Void, onFailure: @escaping (HejhomeLoginErrorCode?) -> Void, useToken: Bool = true) {
         let countryCode = "82"
-        
         self.savedUserInfo.userName = account
-        if account.isValidEmail() {
-            ThingSmartUser.sharedInstance().login(byEmail: countryCode,
-                                                  email: account,
-                                                  password: password) { [weak self] in
-                guard let self = self else { return }
+        
+        let loginCompletion: () -> Void = { [weak self] in
+            guard let self = self else { return }
+            if useToken {
                 self.afterSdkLogin(timeout: timeout, onSuccess: onSuccess, onFailure: onFailure)
-                
-            } failure: { [weak self] (error) in
-                guard let _ = self else { return }
-                
-                onFailure(.SDK_EMAIL_LOGIN_FAIL)
-            }
-        } else {
-            
-            ThingSmartUser.sharedInstance().login(byPhone: countryCode, phoneNumber: account, password: password) { [weak self] in
-                guard let self = self else { return }
-                self.afterSdkLogin(timeout: timeout, onSuccess: onSuccess, onFailure: onFailure)
-                
-            } failure: { [weak self] (error) in
-                guard let _ = self else { return }
-                
-                onFailure(.SDK_PHONE_LOGIN_FAIL)
+            } else {
+                onSuccess()
             }
         }
         
+        let failureHandler: (HejhomeLoginErrorCode?) -> Void = { [weak self] error in
+            guard let _ = self else { return }
+            onFailure(error)
+        }
         
+        if account.isValidEmail() {
+            ThingSmartUser.sharedInstance().login(byEmail: countryCode, email: account, password: password, success: loginCompletion, failure: { _ in failureHandler(.SDK_EMAIL_LOGIN_FAIL) })
+        } else {
+            ThingSmartUser.sharedInstance().login(byPhone: countryCode, phoneNumber: account, password: password, success: loginCompletion, failure: { _ in failureHandler(.SDK_PHONE_LOGIN_FAIL) })
+        }
     }
     
     func cancelLogin() {
@@ -300,10 +309,12 @@ class User: NSObject {
 extension User {
     
     // 현재 유저 기준 전체 디바이스 불러오기
-    func getUserDevice(_ callback: @escaping (([HejhomeDeviceModel]) -> Void)) {
+    func getUserDevice(_ callback: @escaping (([HejhomeDeviceModel]) -> Void), fail: @escaping (() -> Void)) {
         cameraListCallback = callback
         getHomeList {
             self.getAllDeviceList()
+        } fail: {
+            fail()
         }
     }
     
@@ -328,6 +339,7 @@ extension User {
         } else {
             getUserDevice { list in
                 self.findHomeIndex(deviceId, onSuccess: onSuccess)
+            } fail: {
             }
         }
     }
@@ -341,6 +353,7 @@ extension User {
         getHomeList {
             HejhomeHome.homeId = homeId
             callback()
+        } fail: {
         }
         
     }
@@ -386,7 +399,7 @@ extension User {
     }
     
     
-    func getHomeList(_ callback: @escaping (() -> Void)) {
+    func getHomeList(_ callback: @escaping (() -> Void), fail: @escaping (() -> Void)) {
         homeManager.getHomeList { (homeModels) in
             guard let homeModels = homeModels else { self.addHome("Home"); return }
             guard homeModels.count > 0 else { self.addHome("Home"); return }
@@ -395,7 +408,7 @@ extension User {
             callback()
             
         } failure: { (error) in
-            
+            fail()
         }
     }
     
@@ -432,6 +445,7 @@ extension User {
         homeManager.addHome(withName: name, geoName: name, rooms: [], latitude: 37.5665, longitude: 126.9780, success: { result in
             self.getHomeList {
                 //
+            } fail: {
             }
         }, failure: { error in
             

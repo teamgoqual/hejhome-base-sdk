@@ -56,6 +56,10 @@ public class HejhomeBase: NSObject {
         User.shared.callNativeLoginView(userId, onSDKLoginSuccess: onSuccess, onSDKSetupCancelled: onFailure)
     }
     
+    public func sampleLogin(_ userId: String, pw: String, onSuccess: @escaping () -> Void, onFailure: @escaping (HejhomeLoginErrorCode?) -> Void){
+        User.shared.sampleLogin(userId, pw:pw, onSDKLoginSuccess: onSuccess, onSDKSetupCancelled: onFailure)
+    }
+    
     public func testResetSessionData(complete: @escaping () -> Void, fail: @escaping (String) -> Void) {
         User.shared.logout(onComplete: complete, onFailure: fail)
     }
@@ -85,7 +89,7 @@ public class HejhomeBase: NSObject {
     }
     
     public func getUserDevice(_ callback: @escaping ([HejhomeDeviceModel]) -> Void) {
-        User.shared.getUserDevice(callback)
+        User.shared.getUserDevice(callback, fail: {})
     }
     
     public func selectDevice(_ deviceId: String, onSuccess: @escaping () -> Void) {
