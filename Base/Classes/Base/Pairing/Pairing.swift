@@ -133,7 +133,9 @@ extension Pairing {
         
         guard let homeId = HejhomeHome.current?.homeId else { failureHandler(nil); return }
         
-        ThingSmartActivator.sharedInstance().getTokenWithHomeId(homeId) { result in
+        ThingSmartActivator.sharedInstance().getTokenWithHomeId(homeId) { [weak self] result in
+            guard let self = self else { return }
+            
             let token = result ?? ""
             self.isApiToken = false
             self.startQrConfig(token, ssid: ssid, password: password, size: size, completionHandler: completionHandler)
@@ -257,7 +259,8 @@ extension Pairing {
         }
         
         print("HejHomeSDK::: devicePairingCheck Start \(timeout)")
-        model.searchPairingDevice(self.getToken(), mode: mode, timeout: timeout, timeoutMargin: timeoutMargin) { result, time in
+        model.searchPairingDevice(self.getToken(), mode: mode, timeout: timeout, timeoutMargin: timeoutMargin) { [weak self] result, time in
+            guard let self = self else { return }
             
             if time == 0 {
                 self.pairingResultComplete()
@@ -270,7 +273,8 @@ extension Pairing {
             if mode == .EZ { self.checkProcessing = true }
             self.checkFoundPairingDevice(result)
             
-        } fail: { err, time in
+        } fail: { [weak self] err, time in
+            guard let self = self else { return }
             
             if time == 0 {
                 self.pairingResultComplete()
@@ -409,7 +413,9 @@ extension Pairing {
         
         let mode = (mode == .AP) ? ThingActivatorMode.AP : ThingActivatorMode.EZ;
         
-        getPairingToken { token, error in
+        getPairingToken { [weak self] token, error in
+            guard let self = self else { return }
+            
             print("HejHomeSDK::: getPairingToken in \(token)")
             
             guard error == nil else {

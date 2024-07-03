@@ -40,7 +40,8 @@ extension UserCheckModel {
         self.tokenInfo = UserTokenInfo()
         self.timeLeft = timeout
         
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true, block: { timer in
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true, block: { [weak self] timer in
+            guard let self = self else { return }
             
             self.timeLeft -= 1
             if self.timeLeft <= 0 {
@@ -58,7 +59,9 @@ extension UserCheckModel {
     
     func getUserCheckData(uid: String, complete: @escaping (UserTokenInfo) -> Void, fail: @escaping (HejhomeLoginErrorCode) -> Void){
         print("HejHomeSDK::: getUserToken \(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER_CHECK)")
-        API.shared.get(urlString: "\(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER_CHECK)", uid: uid) { (response) in
+        API.shared.get(urlString: "\(GoqualConstants.PLATFORM_URL(HejhomeBase.shared.isDebug))\(GoqualConstants.API_THINQ_USER_CHECK)", uid: uid) { [weak self] (response) in
+            guard let self = self else { return }
+            
             do {
                 var tokenInfo = try UserTokenInfo.init(jsonDictionary: response)
                 if !tokenInfo.userToken.isEmpty {

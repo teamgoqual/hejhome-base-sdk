@@ -223,7 +223,8 @@ class User: NSObject {
             return
         }
         
-        usercheck.searchUserToken(uid: uid, timeout: timeout) { tokenInfo in
+        usercheck.searchUserToken(uid: uid, timeout: timeout) { [weak self] tokenInfo in
+            guard let self = self else { return }
             guard !tokenInfo.userToken.isEmpty else { onFailure(.SDK_EMPTY_TOKEN); return }
             
             User.shared.savedUserInfo.eventToken = tokenInfo.userToken
@@ -311,7 +312,8 @@ extension User {
     // 현재 유저 기준 전체 디바이스 불러오기
     func getUserDevice(_ callback: @escaping (([HejhomeDeviceModel]) -> Void), fail: @escaping (() -> Void)) {
         cameraListCallback = callback
-        getHomeList {
+        getHomeList { [weak self] in
+            guard let self = self else { return }
             self.getAllDeviceList()
         } fail: {
             fail()
@@ -333,11 +335,13 @@ extension User {
     
     func findHomeIndex(_ deviceId: String, onSuccess: @escaping () -> Void) {
         if let foundDevice = allDeviceList.first(where: { $0.deviceId == deviceId }) {
-            selectHome(homeId: foundDevice.homeId) {
+            selectHome(homeId: foundDevice.homeId) { [weak self] in
+                guard let self = self else { return }
                 self.findDevice(deviceId: deviceId, onSuccess: onSuccess)
             }
         } else {
-            getUserDevice { list in
+            getUserDevice { [weak self] list in
+                guard let self = self else { return }
                 self.findHomeIndex(deviceId, onSuccess: onSuccess)
             } fail: {
             }
@@ -400,7 +404,8 @@ extension User {
     
     
     func getHomeList(_ callback: @escaping (() -> Void), fail: @escaping (() -> Void)) {
-        homeManager.getHomeList { (homeModels) in
+        homeManager.getHomeList { [weak self] (homeModels) in
+            guard let self = self else { return }
             guard let homeModels = homeModels else { self.addHome("Home"); return }
             guard homeModels.count > 0 else { self.addHome("Home"); return }
             
@@ -431,7 +436,9 @@ extension User {
         HejhomeHome.current = homeList[listIndex]
         
         listIndex += 1
-        getDeviceListByHome{ model in
+        getDeviceListByHome{ [weak self] model in
+            guard let self = self else { return }
+            
             if let model = model {
                 let sub = self.getDeviceModelList(model)
                 self.allDeviceList.append(contentsOf: sub)
@@ -442,7 +449,9 @@ extension User {
     }
     
     func addHome(_ name: String) {
-        homeManager.addHome(withName: name, geoName: name, rooms: [], latitude: 37.5665, longitude: 126.9780, success: { result in
+        homeManager.addHome(withName: name, geoName: name, rooms: [], latitude: 37.5665, longitude: 126.9780, success: { [weak self] result in
+            guard let self = self else { return }
+            
             self.getHomeList {
                 //
             } fail: {
