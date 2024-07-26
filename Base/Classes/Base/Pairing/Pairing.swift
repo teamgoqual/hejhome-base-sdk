@@ -75,7 +75,7 @@ extension Pairing {
     func getPairingToken(onSuccess: @escaping ((String)->()), onFailure: @escaping  ((PairingErrorCode)->())) {
         guard let homeId = HejhomeHome.current?.homeId else { onFailure(.AUTO_PAIRING_FAIL_INITIAL); return }
         
-        ThingSmartActivator.sharedInstance().getTokenWithHomeId(homeId) { result in
+        ThingSmartActivator.sharedInstance()?.getTokenWithHomeId(homeId) { result in
             guard let result = result, !result.isEmpty else { onFailure(.AUTO_PAIRING_TOKEN_EMPTY); return }
             onSuccess(result)
         } failure: { error in
@@ -85,7 +85,7 @@ extension Pairing {
     
     func stopConfig() {
         model.resetTimer()
-        ThingSmartActivator.sharedInstance().stopConfigWiFi()
+        ThingSmartActivator.sharedInstance()?.stopConfigWiFi()
     }
     
     func startConfig(mode: ThingActivatorMode, ssid: String, password: String, token: String, timeout: TimeInterval = 100, timeoutMargin: TimeInterval = 0) {
@@ -101,9 +101,9 @@ extension Pairing {
         self.model.resetTimer()
         
         // pairing
-        ThingSmartActivator.sharedInstance().delegate = self
-        ThingSmartActivator.sharedInstance().stopConfigWiFi()
-        ThingSmartActivator.sharedInstance().startConfigWiFi(mode, ssid: ssid, password: password, token: token, timeout: timeout - timeoutMargin)
+        ThingSmartActivator.sharedInstance()?.delegate = self
+        ThingSmartActivator.sharedInstance()?.stopConfigWiFi()
+        ThingSmartActivator.sharedInstance()?.startConfigWiFi(mode, ssid: ssid, password: password, token: token, timeout: timeout - timeoutMargin)
 
         print("HejHomeSDK::: startConfig \(self.onPairingSuccess != nil) \(self.isApiToken)")
         if self.onPairingSuccess != nil, self.isApiToken {
@@ -133,7 +133,7 @@ extension Pairing {
         
         guard let homeId = HejhomeHome.current?.homeId else { failureHandler(nil); return }
         
-        ThingSmartActivator.sharedInstance().getTokenWithHomeId(homeId) { [weak self] result in
+        ThingSmartActivator.sharedInstance()?.getTokenWithHomeId(homeId) { [weak self] result in
             guard let self = self else { return }
             
             let token = result ?? ""
@@ -267,7 +267,7 @@ extension Pairing {
             }
             
             if time == timeoutMargin {
-                ThingSmartActivator.sharedInstance().stopConfigWiFi()
+                ThingSmartActivator.sharedInstance()?.stopConfigWiFi()
             }
             
             if mode == .EZ { self.checkProcessing = true }
@@ -281,7 +281,7 @@ extension Pairing {
             }
             
             if time == timeoutMargin {
-                ThingSmartActivator.sharedInstance().stopConfigWiFi()
+                ThingSmartActivator.sharedInstance()?.stopConfigWiFi()
             }
             
             var copylist: [PairingDevice] = []
